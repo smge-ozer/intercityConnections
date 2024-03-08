@@ -1,0 +1,114 @@
+
+import java.util.*;
+
+public class GraphOperationsMain {
+
+    public static void main(String[] args) {
+        
+        GraphOperations graph = new GraphOperations();
+        graph.ReadGraphFromFile("C:/Users/sevva/OneDrive/Masaüstü/graph.txt");
+
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("1. IsThereAPath");
+            System.out.println("2. BFSfromTo");
+            System.out.println("3. DFSfromTo");
+            System.out.println("4. WhatIsShortestPathLength");
+            System.out.println("5. NumberOfSimplePaths");
+            System.out.println("6. Neighbors");
+            System.out.println("7. HighestDegree");
+            System.out.println("8. IsDirected");
+            System.out.println("9. AreTheyAdjacent");
+            System.out.println("10. IsThereACycle");
+            System.out.println("11. NumberOfVerticesInComponent");
+            System.out.println("0. Exit");
+            System.out.print("Enter an option: ");
+            choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter start vertex: ");
+                    String startVertexPathCheck = scanner.next();
+                    System.out.print("Enter end vertex: ");
+                    String endVertexPathCheck = scanner.next();
+                    System.out.println(graph.IsThereAPath(startVertexPathCheck, endVertexPathCheck) ? "Path exists" : "Path does not exist");
+                    break;
+                case 2:
+                    System.out.print("Enter starting city: ");
+                    String startCityBFS = scanner.next();
+                    System.out.print("Enter target city: ");
+                    String targetCityBFS = scanner.next();
+                    graph.BFSfromTo(startCityBFS, targetCityBFS);
+                    break;
+                case 3:
+                    System.out.print("Enter starting city: ");
+                    String startCityDFS = scanner.next();
+                    System.out.print("Enter target city: ");
+                    String targetCityDFS = scanner.next();
+                    System.out.println("DFS from " + startCityDFS + " to " + targetCityDFS + ": ");
+                    graph.DFSfromTo(startCityDFS, targetCityDFS);
+                    break;
+                case 4:
+                    System.out.print("Enter starting city: ");
+                    String startCityShortestPath = scanner.next();
+                    System.out.print("Enter target city: ");
+                    String targetCityShortestPath = scanner.next();
+                    int shortestPathLength = graph.WhatIsShortestPathLength(startCityShortestPath, targetCityShortestPath);
+                    if (shortestPathLength != -1) {
+                        System.out.println("Shortest Path Length: " + shortestPathLength);
+                    } else {
+                        System.out.println("There is no path between " + startCityShortestPath + " and " + targetCityShortestPath);
+                    }
+                    break;
+                case 5:
+                    System.out.print("Enter starting city: ");
+                    String startCitySimplePaths = scanner.next();
+                    System.out.print("Enter target city: ");
+                    String targetCitySimplePaths = scanner.next();
+                    int numberOfPaths = graph.NumberOfSimplePaths(startCitySimplePaths, targetCitySimplePaths);
+                    System.out.println("Number of Simple Paths: " + numberOfPaths);
+                    break;
+                case 6:
+                    System.out.print("Enter vertex to list neighbors: ");
+                    String vertexToListNeighbors = scanner.next();
+                    List<String> neighborsList = graph.Neighbors(vertexToListNeighbors);
+                    System.out.println("Neighbors of " + vertexToListNeighbors + ": " + neighborsList);
+                    break;
+                case 7:
+                    System.out.println("Highest Degree City: " + graph.HighestDegree());
+                    break;
+                case 8:
+                    System.out.println("Is Directed? " + graph.IsDirected());
+                    break;
+                case 9:
+                    System.out.print("Enter city 1: ");
+                    String city1 = scanner.next();
+                    System.out.print("Enter city 2: ");
+                    String city2 = scanner.next();
+                    System.out.println("Are they adjacent? " + graph.AreTheyAdjacent(city1, city2));
+                    break;
+                case 10:
+                    System.out.print("Enter starting city: ");
+                    String startCityCycle = scanner.next();
+                    System.out.println("Is there a cycle starting from " + startCityCycle + "? " + graph.IsThereACycle(startCityCycle));
+                    break;
+                case 11:
+                    System.out.print("Enter starting city: ");
+                    String startCityComponent = scanner.next();
+                    int componentVertices = graph.NumberOfVerticesInComponent(startCityComponent);
+                    System.out.println("Number of Vertices in Component: " + componentVertices);
+                case 0:
+                    System.out.println("Exiting program. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please enter a valid option.");
+                    break;
+            }
+        } while (choice != 0);
+
+        scanner.close();
+    }
+}
+
