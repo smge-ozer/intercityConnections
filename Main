@@ -1,0 +1,122 @@
+
+import java.io.IOException;
+import java.util.Scanner;
+import java.util.*;
+
+public class Main {
+
+    public static void main(String[] args) throws IOException {
+        List<String> nameList = CityGraph.readNamesFromFile("C:/Users/sevva/OneDrive/Masaüstü/names.txt");
+        CityGraph cityGraph = new CityGraph(nameList);
+        cityGraph.readGraphFromFile("C:/Users/sevva/OneDrive/Masaüstü/namesgraph.txt", nameList);
+
+        Map<String, Integer> nameIndexMap = cityGraph.getNameIndexMap();
+
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        do {
+            System.out.println("1. IsThereAPath");
+            System.out.println("2. BFSfromTo");
+            System.out.println("3. DFSfromTo");
+            System.out.println("4. WhatIsShortestPathLength");
+            System.out.println("5. NumberOfSimplePaths");
+            System.out.println("6. Neighbors");
+            System.out.println("7. HighestDegree");
+            System.out.println("8. IsDirected");
+            System.out.println("9. AreTheyAdjacent");
+            System.out.println("10. IsThereACycle");
+            System.out.println("11. NumberOfVerticesInComponent");
+            System.out.println("0. Exit");
+            System.out.print("Enter an option: ");
+            choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter first vertex: ");
+                    String v1 = scanner.next();
+                    System.out.print("Enter second vertex: ");
+                    String v2 = scanner.next();
+                    System.out.println("Result: " + cityGraph.isThereAPath(v1, v2));
+                    break;
+
+                case 2:
+                    System.out.print("Enter starting vertex: ");
+                    String startBFS = scanner.next();
+                    System.out.print("Enter ending vertex: ");
+                    String endBFS = scanner.next();
+                    System.out.print("BFS Path: ");
+                    cityGraph.BFSfromTo(startBFS, endBFS);
+                    break;
+
+                case 3:
+                    System.out.print("Enter starting vertex: ");
+                    String startDFS = scanner.next();
+                    System.out.print("Enter ending vertex: ");
+                    String endDFS = scanner.next();
+                    System.out.print("DFS Path: ");
+                    cityGraph.DFSfromTo(startDFS, endDFS);
+                    break;
+
+                case 4:
+                    System.out.print("Enter starting vertex: ");
+                    String startShortestPath = scanner.next();
+                    System.out.print("Enter ending vertex: ");
+                    String endShortestPath = scanner.next();
+                    System.out.println("Shortest Path Length: " + cityGraph.whatIsShortestPathLength(startShortestPath, endShortestPath));
+                    break;
+
+                case 5:
+                    System.out.print("Enter starting vertex: ");
+                    String startSimplePaths = scanner.next();
+                    System.out.print("Enter ending vertex: ");
+                    String endSimplePaths = scanner.next();
+                    System.out.println("Number of Simple Paths: " + cityGraph.numberOfSimplePaths(startSimplePaths, endSimplePaths));
+                    break;
+
+                case 6:
+                    System.out.print("Enter vertex: ");
+                    String vertex = scanner.next();
+                    cityGraph.neighbors(vertex);
+                    break;
+
+                case 7:
+                    System.out.println("City with the Highest Degree: " + cityGraph.highestDegree());
+                    break;
+
+                case 8:
+                    System.out.println("Is Directed: " + cityGraph.isDirected());
+                    break;
+
+                case 9:
+                    System.out.print("Enter first vertex: ");
+                    String vertex1 = scanner.next();
+                    System.out.print("Enter second vertex: ");
+                    String vertex2 = scanner.next();
+                    System.out.println("Are They Adjacent: " + cityGraph.areTheyAdjacent(vertex1, vertex2));
+                    break;
+
+                case 10:
+                    System.out.print("Enter starting vertex: ");
+                    String startCycle = scanner.next();
+                    System.out.println("Is There a Cycle: " + cityGraph.isThereACycle(startCycle));
+                    break;
+
+                case 11:
+                    System.out.print("Enter starting vertex: ");
+                    String startComponent = scanner.next();
+                    System.out.println("Number of Vertices in Component: " + cityGraph.numberOfVerticesInComponent(startComponent));
+                    break;
+
+                case 0:
+                    System.out.println("Exiting...");
+                    break;
+
+                default:
+                    System.out.println("Invalid choice. Please enter a valid option.");
+            }
+        } while (choice != 0);
+
+        scanner.close();
+    }
+}
