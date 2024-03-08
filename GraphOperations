@@ -1,0 +1,349 @@
+
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.*;
+
+public class GraphOperations {
+
+    private Map<String, Integer> cityIndices;
+    private int[][] adjacencyMatrix;
+
+    public GraphOperations() {
+        cityIndices = new HashMap<>();
+    }
+
+    public void ReadGraphFromFile(String filePath) {
+        try {
+            Scanner scanner = new Scanner(new FileReader(filePath));
+
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+
+                String[] parts = line.split("\\s*->\\s*|:\\s*|,\\s*");
+                String fromCity = parts[0].trim();
+
+                int fromIndex = cityIndices.computeIfAbsent(fromCity, k -> cityIndices.size());
+
+                for (int i = 1; i < parts.length; i += 2) {
+                    String toCity = parts[i].trim();
+                    int weight = Integer.parseInt(parts[i + 1].trim());
+
+                    int toIndex = cityIndices.computeIfAbsent(toCity, k -> cityIndices.size());
+
+                    if (adjacencyMatrix == null) {
+                        adjacencyMatrix = new int[cityIndices.size()][cityIndices.size()];
+                    } else if (toIndex >= adjacencyMatrix.length || fromIndex >= adjacencyMatrix.length) {
+                        resizeMatrix();
+                    }
+
+                    adjacencyMatrix[fromIndex][toIndex] = weight;
+                }
+            }
+
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void resizeMatrix() {
+        int newSize = cityIndices.size();
+        int[][] newMatrix = new int[newSize][newSize];
+
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            System.arraycopy(adjacencyMatrix[i], 0, newMatrix[i], 0, adjacencyMatrix[i].length);
+        }
+
+        adjacencyMatrix = newMatrix;
+    }
+
+    public boolean IsThereAPath(String v1, String v2) {
+
+        int start = cityIndices.getOrDefault(v1, -1);
+        int end = cityIndices.getOrDefault(v2, -1);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Invalid vertices");
+            return false;
+        }
+
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+        return DFSForPath(start, end, visited);
+    }
+
+    private boolean DFSForPath(int current, int end, boolean[] visited) {
+        visited[current] = true;
+
+        if (current == end) {
+            return true;
+        } else {
+            for (int i = 0; i < adjacencyMatrix.length; i++) {
+                if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                    if (DFSForPath(i, end, visited)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    public List<String> Neighbors(String v1) {
+
+        int start = cityIndices.getOrDefault(v1, -1);
+        List<String> neighbors = new ArrayList<>();
+
+        if (start == -1) {
+            System.out.println("Invalid vertex");
+            return neighbors;
+        }
+
+        for (Map.Entry<String, Integer> entry : cityIndices.entrySet()) {
+            int index = entry.getValue();
+            if (adjacencyMatrix[start][index] > 0) {
+                neighbors.add(entry.getKey());
+            }
+        }
+
+        return neighbors;
+    }
+
+    public boolean AreTheyAdjacent(String v1, String v2) {
+
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+        int indexV2 = cityIndices.getOrDefault(v2, -1);
+
+        if (indexV1 != -1 && indexV2 != -1) {
+            return adjacencyMatrix[indexV1][indexV2] != 0;
+        } else {
+            return false;
+        }
+    }
+
+    public String HighestDegree() {
+
+        int maxDegree = -1;
+        String highestDegreeCity = null;
+
+        for (Map.Entry<String, Integer> entry : cityIndices.entrySet()) {
+            String city = entry.getKey();
+            int index = entry.getValue();
+            int degree = 0;
+
+            for (int i = 0; i < adjacencyMatrix.length; i++) {
+                if (adjacencyMatrix[index][i] != 0) {
+                    degree++;
+                }
+            }
+
+            if (degree > maxDegree) {
+                maxDegree = degree;
+                highestDegreeCity = city;
+            }
+        }
+
+        return highestDegreeCity;
+    }
+
+    public boolean IsDirected() {
+
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            for (int j = 0; j < adjacencyMatrix[0].length; j++) {
+                if (adjacencyMatrix[i][j] != adjacencyMatrix[j][i]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void BFSfromTo(String v1, String v2) {
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+        int indexV2 = cityIndices.getOrDefault(v2, -1);
+
+        if (indexV1 != -1 && indexV2 != -1) {
+            Queue<Integer> queue = new LinkedList<>();
+            boolean[] visited = new boolean[adjacencyMatrix.length];
+
+            queue.add(indexV1);
+            visited[indexV1] = true;
+
+            while (!queue.isEmpty()) {
+                int currentVertex = queue.poll();
+                System.out.print(cityIndices.entrySet().stream()
+                        .filter(entry -> entry.getValue() == currentVertex)
+                        .map(Map.Entry::getKey)
+                        .findFirst()
+                        .orElse(null) + " ");
+
+                if (currentVertex == indexV2) {
+                    System.out.println("\nTarget city reached!");
+                    break;
+                }
+
+                for (int i = 0; i < adjacencyMatrix[0].length; i++) {
+                    if (adjacencyMatrix[currentVertex][i] != 0 && !visited[i]) {
+                        queue.add(i);
+                        visited[i] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    public void DFSfromTo(String v1, String v2) {
+
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+        int indexV2 = cityIndices.getOrDefault(v2, -1);
+
+        if (indexV1 != -1 && indexV2 != -1) {
+            boolean[] visited = new boolean[adjacencyMatrix.length];
+            DFS(indexV1, indexV2, visited);
+        }
+    }
+
+    private void DFS(int currentVertex, int targetVertex, boolean[] visited) {
+        visited[currentVertex] = true;
+        System.out.print(cityIndices.entrySet().stream()
+                .filter(entry -> entry.getValue() == currentVertex)
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null) + " ");
+
+        if (currentVertex == targetVertex) {
+            return;
+        }
+
+        for (int i = 0; i < adjacencyMatrix[0].length; i++) {
+            if (adjacencyMatrix[currentVertex][i] != 0 && !visited[i]) {
+                DFS(i, targetVertex, visited);
+            }
+        }
+    }
+
+    public int WhatIsShortestPathLength(String v1, String v2) {
+
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+        int indexV2 = cityIndices.getOrDefault(v2, -1);
+
+        if (indexV1 != -1 && indexV2 != -1) {
+            Queue<Integer> queue = new LinkedList<>();
+            boolean[] visited = new boolean[adjacencyMatrix.length];
+            int[] distances = new int[adjacencyMatrix.length];
+
+            queue.add(indexV1);
+            visited[indexV1] = true;
+            distances[indexV1] = 0;
+
+            while (!queue.isEmpty()) {
+                int currentVertex = queue.poll();
+
+                if (currentVertex == indexV2) {
+                    return distances[currentVertex];
+                }
+
+                for (int i = 0; i < adjacencyMatrix[0].length; i++) {
+                    if (adjacencyMatrix[currentVertex][i] != 0 && !visited[i]) {
+                        queue.add(i);
+                        visited[i] = true;
+                        distances[i] = distances[currentVertex] + 1;
+                    }
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public int NumberOfSimplePaths(String v1, String v2) {
+
+        int start = cityIndices.getOrDefault(v1, -1);
+        int end = cityIndices.getOrDefault(v2, -1);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Invalid vertices");
+            return 0;
+        }
+
+        int[] pathCount = {0};
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+
+        DFSCountPaths(start, end, visited, pathCount);
+
+        System.out.println("Number of simple paths: " + pathCount[0]);
+        return pathCount[0];
+    }
+
+    private void DFSCountPaths(int current, int end, boolean[] visited, int[] pathCount) {
+        visited[current] = true;
+
+        if (current == end) {
+            pathCount[0]++;
+        } else {
+            for (int i = 0; i < adjacencyMatrix.length; i++) {
+                if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                    DFSCountPaths(i, end, visited, pathCount);
+                }
+            }
+        }
+
+        visited[current] = false;
+    }
+
+    public boolean IsThereACycle(String v1) {
+
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+
+        if (indexV1 != -1) {
+            boolean[] visited = new boolean[adjacencyMatrix.length];
+            return hasCycle(indexV1, visited, -1);
+        }
+
+        return false;
+    }
+
+    private boolean hasCycle(int currentVertex, boolean[] visited, int parent) {
+        visited[currentVertex] = true;
+
+        for (int i = 0; i < adjacencyMatrix[0].length; i++) {
+            if (adjacencyMatrix[currentVertex][i] != 0) {
+                if (!visited[i]) {
+                    if (hasCycle(i, visited, currentVertex)) {
+                        return true;
+                    }
+                } else if (i != parent) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public int NumberOfVerticesInComponent(String v1) {
+
+        int indexV1 = cityIndices.getOrDefault(v1, -1);
+
+        if (indexV1 != -1) {
+            boolean[] visited = new boolean[adjacencyMatrix.length];
+            return countComponentVertices(indexV1, visited);
+        }
+
+        return 0;
+    }
+
+    private int countComponentVertices(int currentVertex, boolean[] visited) {
+        visited[currentVertex] = true;
+        int count = 1;
+
+        for (int i = 0; i < adjacencyMatrix[0].length; i++) {
+            if (adjacencyMatrix[currentVertex][i] != 0 && !visited[i]) {
+                count += countComponentVertices(i, visited);
+            }
+        }
+
+        return count;
+
+    }
+}
