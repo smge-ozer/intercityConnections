@@ -1,0 +1,38 @@
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
+import java.util.LinkedList;
+
+public class HashTable {
+
+    private static final int TABLE_SIZE = 353;
+    private LinkedList<String>[] table;
+
+    public HashTable() {
+        table = new LinkedList[TABLE_SIZE];
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            table[i] = new LinkedList<>();
+        }
+    }
+
+    public int getHashCode(String name) {
+
+        return Math.abs(name.hashCode()) % TABLE_SIZE;
+    }
+
+    public void insert(String name) {
+        int index = getHashCode(name);
+        table[index].add(name);
+    }
+
+    public int search(String name) {
+        int index = getHashCode(name);
+        LinkedList<String> list = table[index];
+        if (list.contains(name)) {
+            return index;
+        }
+        return -1;
+    }
+}
