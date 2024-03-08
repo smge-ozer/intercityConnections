@@ -1,0 +1,527 @@
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
+
+public class CityGraph {
+
+    private Map<String, Integer> nameIndexMap;
+    private static final int TABLE_SIZE = 1000;
+    private Map<String, Integer> vertexMap;
+    private String[] vertexNames;
+    private int[][] adjacencyMatrix;
+    private boolean directed;
+    private int[] vertexHashes;
+    private Map<String, Integer> cityIndices;
+
+    public CityGraph(List<String> names) {
+        vertexNames = new String[TABLE_SIZE];
+        adjacencyMatrix = new int[TABLE_SIZE][TABLE_SIZE];
+        vertexHashes = new int[TABLE_SIZE];
+        this.directed = false;  
+
+       
+        vertexMap = new HashMap<>();
+        cityIndices = new HashMap<>();
+        nameIndexMap = new HashMap<>();
+
+       
+        for (int i = 0; i < names.size(); i++) {
+            String name = names.get(i);
+            vertexMap.put(name, i);
+            vertexNames[i] = name;
+            cityIndices.put(name, i);
+            nameIndexMap.put(name, i);
+        }
+    }
+
+    public void readGraphFromFile(String fileName, List<String> names) throws IOException {
+        Map<String, Integer> nameIndexMap = new HashMap<>();
+        for (int i = 0; i < names.size(); i++) {
+            nameIndexMap.put(names.get(i), i);
+        }
+
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        try {
+            String line;
+            while ((line = br.readLine()) != null) {
+                processLine(line, nameIndexMap);
+            }
+            initializeAdjacencyMatrix();
+        } finally {
+            br.close();
+        }
+    }
+
+    public Map<String, Integer> getNameIndexMap() {
+        return nameIndexMap;
+    }
+
+    public static List<String> readNamesFromFile(String filePath) {
+        List<String> names = new ArrayList<>();
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                names.add(line.trim());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("Name List:");
+        System.out.println(names);
+
+        return names;
+    }
+
+    private void processLine(String line, Map<String, Integer> nameIndexMap) {
+        String[] parts = line.split("\\s*->\\s*|:\\s*|,\\s*");
+        String fromVertex = parts[0].trim();
+
+        int fromIndex = nameIndexMap.getOrDefault(fromVertex, -1);
+        if (fromIndex == -1) {
+            System.out.println("Error: " + fromVertex + " name could not found in the list.");
+            return;
+        }
+
+        for (int i = 1; i < parts.length; i += 2) {
+            String toVertex = parts[i].trim();
+            int weight = Integer.parseInt(parts[i + 1].trim());
+
+            int toIndex = nameIndexMap.getOrDefault(toVertex, -1);
+            if (toIndex == -1) {
+
+                System.out.println("Hata: " + toVertex + " ismi isim listesinde bulunamadı.");
+                continue;
+            }
+
+            if (adjacencyMatrix == null) {
+                adjacencyMatrix = new int[nameIndexMap.size()][nameIndexMap.size()];
+            } else if (toIndex >= adjacencyMatrix.length || fromIndex >= adjacencyMatrix.length) {
+                resizeMatrix();
+            }
+
+            adjacencyMatrix[fromIndex][toIndex] = weight;
+        }
+    }
+
+    private void initializeAdjacencyMatrix() {
+        int vertexCount = nameIndexMap.size();
+        adjacencyMatrix = new int[vertexCount][vertexCount];
+    }
+
+    private void resizeMatrix() {
+        int newSize = Math.max(adjacencyMatrix.length * 2, nameIndexMap.size());
+
+        int[][] newMatrix = new int[newSize][newSize];
+
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            System.arraycopy(adjacencyMatrix[i], 0, newMatrix[i], 0, adjacencyMatrix[i].length);
+        }
+
+        adjacencyMatrix = newMatrix;
+    }
+
+    private int calculateHashCode(String name) {
+        int hash = hash(name);
+
+        while (vertexMap.containsKey(name) && !vertexMap.get(name).equals(name)) {
+            hash = (hash + 1) % TABLE_SIZE;
+        }
+
+        return hash;
+    }
+
+    private int hash(String key) {
+        int hash = 0;
+        for (int i = 0; i < key.length(); i++) {
+            hash = (hash * 31 + key.charAt(i)) % TABLE_SIZE;
+        }
+        return hash;
+    }
+
+    private int findMinimumDistanceVertex(int[] distance, boolean[] visited) {
+        int minDistance = Integer.MAX_VALUE;
+        int minVertex = -1;
+
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            if (!visited[i] && distance[i] < minDistance) {
+                minDistance = distance[i];
+                minVertex = i;
+            }
+        }
+
+        return minVertex;
+    }
+
+    public boolean isThereAPath(String v1, String v2) {
+        int start = getVertexIndex(v1);
+        int end = getVertexIndex(v2);
+
+        if (start == -1 || end == -1) {
+            return false;
+        }
+
+        return BFS(start, end);
+    }
+
+    private boolean BFS(int start, int end) {
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+        int[] parent = new int[adjacencyMatrix.length];
+        Queue<Integer> queue = new LinkedList<>();
+
+        Arrays.fill(parent, -1);
+
+        queue.add(start);
+        visited[start] = true;
+
+        while (!queue.isEmpty()) {
+            int current = queue.poll();
+
+            if (current == end) {
+                return true;
+            }
+
+            for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+                if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                    queue.add(i);
+                    visited[i] = true;
+                    parent[i] = current;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public void BFSfromTo(String v1, String v2) {
+        int start = getVertexIndex(v1);
+        int end = getVertexIndex(v2);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Düğümler bulunamadı.");
+            return;
+        }
+
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+        Queue<Integer> queue = new LinkedList<>();
+        int[] parent = new int[adjacencyMatrix.length];
+
+        Arrays.fill(parent, -1);
+
+        queue.add(start);
+        visited[start] = true;
+
+        while (!queue.isEmpty()) {
+            int current = queue.poll();
+
+            if (current == end) {
+                printBFSPath(parent, start, end);
+                return;
+            }
+
+            for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+                if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                    queue.add(i);
+                    visited[i] = true;
+                    parent[i] = current;
+                }
+            }
+        }
+
+        System.out.println("Ulaşılamadı.");
+    }
+
+    public String getVertexName(int index) {
+        for (Map.Entry<String, Integer> entry : vertexMap.entrySet()) {
+            if (entry.getValue() == index) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private void printBFSPath(int[] parent, int start, int end) {
+        List<Integer> path = new ArrayList<>();
+        int current = end;
+
+        while (current != -1) {
+            path.add(current);
+            current = parent[current];
+        }
+
+        Collections.reverse(path);
+
+        for (int vertex : path) {
+            System.out.print(getVertexName(vertex) + " ");
+        }
+
+        System.out.println();
+    }
+
+    private List<String> getNeighbors(String vertex) {
+        List<String> neighbors = new ArrayList<>();
+        int vertexIndex = getVertexIndex(vertex);
+
+        if (vertexIndex != -1) {
+            for (int i = 0; i < adjacencyMatrix[vertexIndex].length; i++) {
+                if (adjacencyMatrix[vertexIndex][i] > 0) {
+                    neighbors.add(getVertexName(i));
+                }
+            }
+        }
+
+        return neighbors;
+    }
+
+    public void DFSfromTo(String v1, String v2) {
+        int start = getVertexIndex(v1);
+        int end = getVertexIndex(v2);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Invalid vertices.");
+            return;
+        }
+
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+        List<Integer> path = new ArrayList<>();
+
+        DFS(start, end, visited, path);
+
+        if (path.isEmpty()) {
+            System.out.println("No path found.");
+        } else {
+            System.out.print("Path: ");
+            for (int vertex : path) {
+                System.out.print(getVertexName(vertex) + " ");
+            }
+            System.out.println();
+        }
+    }
+
+    private boolean DFS(int current, int end, boolean[] visited, List<Integer> path) {
+        visited[current] = true;
+        path.add(current);
+
+        if (current == end) {
+            return true;
+        }
+
+        for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+            if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                if (DFS(i, end, visited, path)) {
+                    return true;
+                }
+            }
+        }
+
+        path.remove(path.size() - 1);
+        return false;
+    }
+
+    public int whatIsShortestPathLength(String v1, String v2) {
+        int start = getVertexIndex(v1);
+        int end = getVertexIndex(v2);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Invalid vertices.");
+            return -1;
+        }
+
+        int[] distance = new int[adjacencyMatrix.length];
+        Arrays.fill(distance, Integer.MAX_VALUE);
+        distance[start] = 0;
+
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+
+        while (true) {
+            int current = findMinimumDistanceVertex(distance, visited);
+            if (current == -1 || current == end) {
+                break;
+            }
+
+            visited[current] = true;
+
+            for (int neighbor = 0; neighbor < adjacencyMatrix[current].length; neighbor++) {
+                if (!visited[neighbor] && adjacencyMatrix[current][neighbor] > 0
+                        && distance[current] + adjacencyMatrix[current][neighbor] < distance[neighbor]) {
+                    distance[neighbor] = distance[current] + adjacencyMatrix[current][neighbor];
+                }
+            }
+        }
+
+        if (distance[end] == Integer.MAX_VALUE) {
+            System.out.println("No path found between " + v1 + " and " + v2);
+            return -1;
+        } else {
+            System.out.println("Shortest Path Length between " + v1 + " and " + v2 + ": " + distance[end]);
+            return distance[end];
+        }
+    }
+
+    public int numberOfSimplePaths(String v1, String v2) {
+        int start = getVertexIndex(v1);
+        int end = getVertexIndex(v2);
+
+        if (start == -1 || end == -1) {
+            System.out.println("Invalid vertices.");
+            return 0;
+        }
+
+        int[] count = {0};
+        boolean[] visited = new boolean[adjacencyMatrix.length];
+        List<Integer> path = new ArrayList<>();
+
+        DFSCountPaths(start, end, visited, count, path);
+
+        System.out.println("Number of Paths: " + count[0]);
+        return count[0];
+    }
+
+    private void DFSCountPaths(int current, int end, boolean[] visited, int[] count, List<Integer> path) {
+        visited[current] = true;
+        path.add(current);
+
+        if (current == end) {
+            count[0]++;
+        } else {
+            for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+                if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                    DFSCountPaths(i, end, visited, count, path);
+                }
+            }
+        }
+
+        visited[current] = false;
+        path.remove(path.size() - 1);
+    }
+
+    public List<String> neighbors(String v1) {
+        List<String> neighbors = getNeighbors(v1);
+        System.out.println("Neighbors of " + v1 + ": " + neighbors);
+        return neighbors;
+    }
+
+    public String highestDegree() {
+        int maxDegree = Integer.MIN_VALUE;
+        String maxDegreeVertices = "";
+
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            int degree = getDegree(i);
+            if (degree > maxDegree) {
+                maxDegree = degree;
+                maxDegreeVertices = getVertexName(i);
+            } else if (degree == maxDegree && !maxDegreeVertices.isEmpty()) {
+                maxDegreeVertices += ", " + getVertexName(i);
+            }
+        }
+
+        if (maxDegree == 0) {
+            System.out.println("No vertex with degree greater than 0 found.");
+            return "";
+        } else {
+            System.out.println("Vertex with the Highest Degree: " + maxDegreeVertices);
+            return maxDegreeVertices;
+        }
+    }
+
+    private int getDegree(int vertexIndex) {
+        int degree = 0;
+        for (int i = 0; i < adjacencyMatrix[vertexIndex].length; i++) {
+            if (adjacencyMatrix[vertexIndex][i] > 0) {
+                degree++;
+            }
+        }
+        return degree;
+    }
+
+    public boolean isDirected() {
+        for (int i = 0; i < adjacencyMatrix.length; i++) {
+            for (int j = 0; j < adjacencyMatrix[i].length; j++) {
+                if (adjacencyMatrix[i][j] > 0) {
+                    if (adjacencyMatrix[j][i] > 0) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean areTheyAdjacent(String v1, String v2) {
+        int vertex1 = vertexMap.getOrDefault(v1, -1);
+        int vertex2 = vertexMap.getOrDefault(v2, -1);
+
+        if (vertex1 == -1 || vertex2 == -1) {
+            System.out.println("Invalid vertices.");
+            return false;
+        }
+
+        return adjacencyMatrix[vertex1][vertex2] > 0 || adjacencyMatrix[vertex2][vertex1] > 0;
+    }
+
+    public boolean isThereACycle(String v1) {
+        int start = vertexMap.getOrDefault(v1, -1);
+
+        if (start == -1) {
+            System.out.println("Invalid vertex.");
+            return false;
+        }
+
+        boolean[] visited = new boolean[vertexMap.size()];
+        return DFSCycleCheck(start, -1, visited);
+    }
+
+    private boolean DFSCycleCheck(int current, int parent, boolean[] visited) {
+        visited[current] = true;
+
+        for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+            if (adjacencyMatrix[current][i] > 0) {
+                if (!visited[i]) {
+                    if (DFSCycleCheck(i, current, visited)) {
+                        return true;
+                    }
+                } else if (i != parent) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public int numberOfVerticesInComponent(String v1) {
+        int start = vertexMap.getOrDefault(v1, -1);
+
+        if (start == -1) {
+            System.out.println("Invalid vertex.");
+            return 0;
+        }
+
+        boolean[] visited = new boolean[vertexMap.size()];
+        int[] count = {0};
+
+        DFSCountVertices(start, visited, count);
+
+        System.out.println("Number of Vertices in Component: " + count[0]);
+        return count[0];
+    }
+
+    private void DFSCountVertices(int current, boolean[] visited, int[] count) {
+        visited[current] = true;
+        count[0]++;
+
+        for (int i = 0; i < adjacencyMatrix[current].length; i++) {
+            if (adjacencyMatrix[current][i] > 0 && !visited[i]) {
+                DFSCountVertices(i, visited, count);
+            }
+        }
+    }
+
+    private int getVertexIndex(String vertexName) {
+        return vertexMap.getOrDefault(vertexName, -1);
+    }
+}
